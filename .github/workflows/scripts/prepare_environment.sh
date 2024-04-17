@@ -8,7 +8,7 @@ chmod 755 ~/.solcx/solc*
 
 # Retrieve brownie dependencies
 export VERSION_OPEN_ZEPPELIN=4.7.3
-export VERSION_CHAINLINK=1.6.0
+export VERSION_CHAINLINK=2.10.0
 wget -O /tmp/v${VERSION_OPEN_ZEPPELIN}.tar.gz https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v${VERSION_OPEN_ZEPPELIN}.tar.gz 
 wget -O /tmp/v${VERSION_CHAINLINK}.tar.gz https://github.com/smartcontractkit/chainlink/archive/refs/tags/v${VERSION_CHAINLINK}.tar.gz
 mkdir -p ~/.brownie/packages/OpenZeppelin 

@@ -1,0 +1,48 @@
+owner 0x66aB6D9362d4F35596279692F0251Db635165871
+controller.address 0x2acC1AbFdC76E48e49c91f55512066B4DD6555Dd
+proxy.address 0xFd87ceEa79b211268Fb182a48E43644543c08709
+registry.address 0xFd87ceEa79b211268Fb182a48E43644543c08709
+registry.getContract(InstanceOperatorService) 0x0000000000000000000000000000000000000000
+
+brownie console --network polygon-test
+
+# in console
+owner = accounts.add()
+# will generate a new account and prints the mnemonic here
+
+owner.address
+# will print the owner address that you will need to fund first
+
+from scripts.instance import GifInstance
+
+# publishes source code to the network. owner is set accounts[0] in this case
+instance = GifInstance(owner, instanceWallet=accounts[1], registryAddress=accounts[2], publishSource=True)
+
+# after the deploy print the registry address
+instance.getRegistry().address
+
+brownie run scripts/deploy.py
+
+{'instanceOperator': <Account '0x66aB6D9362d4F35596279692F0251Db635165871'>, 
+'instanceWallet': <Account '0x33A4622B82D4c04a53e170c638B944ce27cffce3'>, 
+'oracleProvider': <Account '0x0063046686E46Dc6F15918b61AE2B121458534a5'>, 
+'chainlinkNodeOperator': <Account '0x21b42413bA931038f35e7A5224FaDb065d297Ba3'>, 
+'riskpoolKeeper': <Account '0x46C0a5326E643E4f71D3149d50B48216e174Ae84'>, 
+'riskpoolWallet': <Account '0x807c47A89F720fe4Ee9b8343c286Fc886f43191b'>, 
+'investor': <Account '0x844ec86426F076647A5362706a04570A5965473B'>, 
+'productOwner': <Account '0x23BB2Bb6c340D4C91cAa478EdF6593fC5c4a6d4B'>, 
+'insurer': <Account '0xA868bC7c1AF08B8831795FAC946025557369F69C'>, 
+'customer1': <Account '0x1CEE82EEd89Bd5Be5bf2507a92a755dcF1D8e8dc'>, 
+'customer2': <Account '0x5C04f1b36C6e90Bf649914021De6b743652e3881'>, 
+'erc20Token': <TestCoin Contract '0xe25EDE8b52d4DE741Bd61c30060a003f0F1151A5'>, 
+'instance': <scripts.instance.GifInstance object at 0x00000250F9BA3690>, 
+'instanceService': <InstanceService Contract '0x6313a418fabBF349D71Aa34eb9FD0066f0e578cA'>, 
+'instanceOperatorService': <InstanceOperatorService Contract '0xcCa93aF54060793ED3A7E6bd3Bb312CfC6C27e3A'>, 
+'componentOwnerService': <ComponentOwnerService Contract '0xBB41Eb7A00C0A8382D94A37fA30BB323421B7784'>, 
+'product': <AyiiProduct Contract '0x0d97680E8a2Ab19CfE5aa52460052E5b117178b3'>, 
+'oracle': <AyiiOracle Contract '0xa8eF2E7Bd13e37B6fE0556166A17F9A90329ae26'>, 
+'riskpool': <AyiiRiskpool Contract '0x305Eae03f2Bab16120eDC3AE6666413dE1767f25'>, 
+'riskId1': 0xa57a6cbeaeb17408bb46e2f258d1dbf8346a256f7b68e305a3d29b821e246f5a, 
+'riskId2': 0x51a8dcbef824f66e5ba4e2b5166bb21eeaa4f2467576c19e309b212730c2f3f9, 
+'processId1': 0x760414f668d8f93d7af5c11edd96fbd5d39852a38a54d7721fba5a9b43daa977, 
+'processId2': 0x3f82521247d26d7dc5ebd82b916ba89b1a7cd6f3302f187bb2598bc17eebd034}

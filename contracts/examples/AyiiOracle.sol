@@ -9,8 +9,9 @@ import "@etherisc/gif-interface/contracts/components/Oracle.sol";
 contract AyiiOracle is 
     Oracle, ChainlinkClient 
 {
-    using strings for bytes32;
     using Chainlink for Chainlink.Request;
+    using strings for bytes32;
+    
 
     mapping(bytes32 /* Chainlink request ID */ => uint256 /* GIF request ID */) public gifRequests;
     bytes32 public jobId;
@@ -53,8 +54,8 @@ contract AyiiOracle is
         public 
         onlyOwner 
     {
-        if (_chainLinkToken != address(0)) { setChainlinkToken(_chainLinkToken); }
-        if (_chainLinkOperator != address(0)) { setChainlinkOracle(_chainLinkOperator); }
+        if (_chainLinkToken != address(0)) { _setChainlinkToken(_chainLinkToken); }
+        if (_chainLinkOperator != address(0)) { _setChainlinkOracle(_chainLinkOperator); }
         
         jobId = _jobId;
         payment = _payment;
@@ -64,7 +65,7 @@ contract AyiiOracle is
         external override
         onlyQuery
     {
-        Chainlink.Request memory request_ = buildChainlinkRequest(
+        Chainlink.Request memory request_ = _buildChainlinkRequest(
             jobId,
             address(this),
             this.fulfill.selector
@@ -75,12 +76,12 @@ contract AyiiOracle is
             bytes32 uaiId, 
             bytes32 cropId
         ) = abi.decode(input, (bytes32, bytes32, bytes32));
+        
+        request_._add("projectId", projectId.toB32String());
+        request_._add("uaiId", uaiId.toB32String());
+        request_._add("cropId", cropId.toB32String());
 
-        request_.add("projectId", projectId.toB32String());
-        request_.add("uaiId", uaiId.toB32String());
-        request_.add("cropId", cropId.toB32String());
-
-        bytes32 chainlinkRequestId = sendChainlinkRequest(request_, payment);
+        bytes32 chainlinkRequestId = _sendChainlinkRequest(request_, payment);
 
         gifRequests[chainlinkRequestId] = gifRequestId;
         emit LogAyiiRequest(gifRequestId, chainlinkRequestId);
@@ -141,11 +142,11 @@ contract AyiiOracle is
     }
 
     function getChainlinkToken() external view returns(address linkTokenAddress) {
-        return chainlinkTokenAddress();
+        return _chainlinkTokenAddress();
     }
 
     function getChainlinkOperator() external view returns(address operator) {
-        return chainlinkOracleAddress();
+        return _chainlinkOracleAddress();
     }
 }
 

@@ -10,7 +10,7 @@ from brownie.network import accounts
 from brownie.network.account import Account
 
 def s2h(text: str) -> str:
-    return Web3.toHex(text.encode('ascii'))
+    return Web3.to_hex(text.encode('ascii'))
 
 def h2s(hex: str) -> str:
     return Web3.toText(hex).split('\x00')[-1]
@@ -19,7 +19,7 @@ def h2sLeft(hex: str) -> str:
     return Web3.toText(hex).split('\x00')[0]
 
 def s2b32(text: str):
-    return '{:0<66}'.format(Web3.toHex(text.encode('ascii')))[:66]
+    return '{:0<66}'.format(Web3.to_hex(text.encode('ascii')))[:66]
 
 def b322s(b32: bytes):
     return b32.decode().split('\x00')[0]

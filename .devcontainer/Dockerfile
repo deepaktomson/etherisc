@@ -41,7 +41,7 @@ RUN /tmp/install_solidity.sh
 
 # Download openzeppelin and chainlink depedencies (large and slow)
 ARG VERSION_OPEN_ZEPPELIN=4.7.3
-ARG VERSION_CHAINLINK=1.6.0
+ARG VERSION_CHAINLINK=2.10.0
 RUN wget -O /tmp/v${VERSION_OPEN_ZEPPELIN}.tar.gz https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v${VERSION_OPEN_ZEPPELIN}.tar.gz \
     && wget -O /tmp/v${VERSION_CHAINLINK}.tar.gz https://github.com/smartcontractkit/chainlink/archive/refs/tags/v${VERSION_CHAINLINK}.tar.gz
 RUN mkdir -p /home/vscode/.brownie/packages/OpenZeppelin \
