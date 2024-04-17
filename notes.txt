@@ -1,3 +1,7 @@
+solidity compiler - 0.8.2
+chainlink version 2.10.0
+
+
 owner 0x66aB6D9362d4F35596279692F0251Db635165871
 controller.address 0x2acC1AbFdC76E48e49c91f55512066B4DD6555Dd
 proxy.address 0xFd87ceEa79b211268Fb182a48E43644543c08709
@@ -41,6 +45,8 @@ brownie run scripts/deploy.py
 'componentOwnerService': <ComponentOwnerService Contract '0xBB41Eb7A00C0A8382D94A37fA30BB323421B7784'>, 
 'product': <AyiiProduct Contract '0x0d97680E8a2Ab19CfE5aa52460052E5b117178b3'>, 
 'oracle': <AyiiOracle Contract '0xa8eF2E7Bd13e37B6fE0556166A17F9A90329ae26'>, 
+
+
 'riskpool': <AyiiRiskpool Contract '0x305Eae03f2Bab16120eDC3AE6666413dE1767f25'>, 
 'riskId1': 0xa57a6cbeaeb17408bb46e2f258d1dbf8346a256f7b68e305a3d29b821e246f5a, 
 'riskId2': 0x51a8dcbef824f66e5ba4e2b5166bb21eeaa4f2467576c19e309b212730c2f3f9, 
