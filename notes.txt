@@ -52,3 +52,15 @@ brownie run scripts/deploy.py
 'riskId2': 0x51a8dcbef824f66e5ba4e2b5166bb21eeaa4f2467576c19e309b212730c2f3f9, 
 'processId1': 0x760414f668d8f93d7af5c11edd96fbd5d39852a38a54d7721fba5a9b43daa977, 
 'processId2': 0x3f82521247d26d7dc5ebd82b916ba89b1a7cd6f3302f187bb2598bc17eebd034}
+
+
+brownie networks add Ethereum ganache-local host=http://127.0.0.1:8545 chainid=5777
+
+brownie networks list
+shows: ganache-local: ganache-local also
+
+
+brownie.config.yaml file:
+
+networks:
+  default: ganache-local 
