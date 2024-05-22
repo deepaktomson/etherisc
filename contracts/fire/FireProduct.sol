@@ -5,19 +5,27 @@ import "@etherisc/gif-interface/contracts/components/Product.sol";
 
 import "./FireOracle.sol";
 
+   
+
+
 contract FireProduct is Product {
+   
+
     // constants
     bytes32 public constant VERSION = "0.0.1";
     bytes32 public constant POLICY_FLOW = "PolicyDefaultFlow";
 
     // leads to %5 premiums on object value
-    uint256 public constant OBJECT_VALUE_DIVISOR = 20;
+    uint256 public constant OBJECT_VALUE_DIVISOR = 100;
 
     // payout specs
     uint256 public constant PAYOUT_FACTOR_MEDIUM = 20;
     uint256 public constant PAYOUT_FACTOR_LARGE = 100;
 
     string public constant CALLBACK_METHOD_NAME = "oracleCallback";
+
+ 
+   
 
     // variables
     // TODO should be framework feature
@@ -31,7 +39,7 @@ contract FireProduct is Product {
         bytes32 processId,
         address policyHolder,
         uint256 sumInsured,
-        string objectName
+       address nominee
     );
     event LogFirePolicyExpired(string objectName, bytes32 processId);
     event LogFireOracleCallbackReceived(
@@ -91,21 +99,62 @@ contract FireProduct is Product {
         return abi.encode(objectName);
     }
 
+    function _checkEligibilty(
+        string memory email, 
+        uint256 age, 
+        uint256 gender, 
+        uint256 objectValue) external 
+    returns(string memory e, uint256 a, uint256 g, uint256 oV, uint8 status) {
+  
+
+        if (objectValue <= 0 || objectValue >= 10 ** 9) {
+            return (email, age, gender, objectValue, 0);
+        } 
+
+
+        if (activePolicy[email]) {
+            return (email, age, gender, objectValue, 0);
+        }
+
+        if (activePolicy[email]) {
+            return (email, age, gender, objectValue, 0);
+        }
+
+        if (age < 18 || age > 60) {
+            return (email, age, gender, objectValue, 0);
+        }
+
+        return (email, age, gender, objectValue, 1);
+    }
+
     function applyForPolicy(
+        string memory email,
+        uint256 age,
+        uint256 gender,
+        address nominee,
         string memory objectName,
         uint256 objectValue
     ) external returns (bytes32 processId, uint256 requestId) {
         // Validate input parameters
         require(objectValue > 0, "ERROR:FI-010:OBJECT_VALUE_ZERO");
-        require(!activePolicy[objectName], "ERROR:FI-011:ACTIVE_POLICY_EXISTS");
+        require(!activePolicy[email], "ERROR:FI-012:ACTIVE_POLICY_EXISTS");
+        require(age >= 18 && age <= 60, "ERROR:FI-012:OUTSIDE_AGE_LIMITS");
+        require(objectValue < 10 ** 19, "ERROR:FI-013:OBJECT_VALUE_TOO_LARGE");
+
+        
 
         // Create and underwrite new application
         address policyHolder = msg.sender;
         uint256 premiumAmount = calculatePremium(objectValue);
+        //  require(msg.value >= premiumAmount, "ERROR:FI-014:NO_PREMIUM");
+        require(policyHolder.balance > premiumAmount, "ERROR:FI-015:INSUFFICIENT_BALANCE");
+
+       
         uint256 sumInsuredAmount = objectValue;
-        bytes memory metaData = "";
+        bytes memory metaData = abi.encodePacked(email, age, gender, nominee);
+
         bytes memory applicationData = encodeApplicationParametersToData(
-            objectName
+            email
         );
 
         processId = _newApplication(
@@ -117,15 +166,18 @@ contract FireProduct is Product {
         );
 
         _underwrite(processId);
+        // _decline(processId) to decline
+
+        // _collectPremium(processId, premiumAmount);
 
         // Update activ state for object
-        activePolicy[objectName] = true;
+        activePolicy[email] = true;
         _applications.push(processId);
 
         // trigger fire observation for object id via oracle call
         requestId = _request(
             processId,
-            abi.encode(objectName),
+            abi.encode(email),
             CALLBACK_METHOD_NAME,
             _oracleId
         );
@@ -134,7 +186,7 @@ contract FireProduct is Product {
             processId,
             policyHolder,
             sumInsuredAmount,
-            objectName
+            nominee
         );
     }
 
@@ -143,6 +195,7 @@ contract FireProduct is Product {
     ) public pure returns (uint256 premiumAmount) {
         return objectValue / OBJECT_VALUE_DIVISOR;
     }
+
 
     function expirePolicy(bytes32 processId) external onlyOwner {
         // Get policy data

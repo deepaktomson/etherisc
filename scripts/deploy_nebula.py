@@ -1,11 +1,6 @@
-from brownie.network import accounts
-from brownie.network.account import Account
 from brownie import (
-    interface,
-    network,
-    web3,
     Usdc,
-    FireProduct,
+    NebulaProduct,
     FireOracle,
     FireRiskpool
 )
@@ -25,11 +20,11 @@ from scripts.deploy_product import (
 )
 
 # product/oracle/riskpool base name
-BASE_NAME = 'Fire'
+BASE_NAME = 'Nebula'
 
 # default setup for all_in_1 -> creatd_policy
-OBJECT_NAME = 'My Home'
-OBJECT_VALUE = 10 ** 5
+OBJECT_NAME = 'LIFE'
+OBJECT_VALUE = 10 ** 3
 
 
 # default setup for all_in_1 -> create_bundle
@@ -37,7 +32,7 @@ BUNDLE_FUNDING = 10 ** 6
 
 # contract classes for all_in_1
 CONTRACT_CLASS_TOKEN = Usdc
-CONTRACT_CLASS_PRODUCT = FireProduct
+CONTRACT_CLASS_PRODUCT = NebulaProduct
 CONTRACT_CLASS_ORACLE = FireOracle
 CONTRACT_CLASS_RISKPOOL = FireRiskpool
 
@@ -83,13 +78,19 @@ def create_policy(
     instance_operator,
     product,
     customer,
+    email,
+    age, 
+    gender,
+    nominee,
     object_name = OBJECT_NAME,
-    object_value = OBJECT_VALUE
+    object_value = OBJECT_VALUE,
+  
 ):
     # fund customer to pay premium
     token = get_product_token(product)
     sum_insured_amount = to_token_amount(token, object_value)
     premium_amount = product.calculatePremium(sum_insured_amount)
+    # token.transferFrom(customer, instance.address, premium_amount, {"from": customer })
 
     fund_and_create_allowance(
         instance,
@@ -100,9 +101,14 @@ def create_policy(
     
     # create new policy
     tx = product.applyForPolicy(
+        email,
+        age, 
+        gender,
+        nominee,
         object_name,
         sum_insured_amount,
-        {'from': customer})
+      
+        {'from': customer })
 
     return get_process_id(tx)
 

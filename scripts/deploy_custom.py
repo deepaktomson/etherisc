@@ -1,9 +1,4 @@
-from brownie.network import accounts
-from brownie.network.account import Account
 from brownie import (
-    interface,
-    network,
-    web3,
     Usdc,
     FireProduct,
     FireOracle,
@@ -83,8 +78,13 @@ def create_policy(
     instance_operator,
     product,
     customer,
+    email,
+    age, 
+    gender,
+    nominee,
     object_name = OBJECT_NAME,
-    object_value = OBJECT_VALUE
+    object_value = OBJECT_VALUE,
+  
 ):
     # fund customer to pay premium
     token = get_product_token(product)
@@ -100,8 +100,13 @@ def create_policy(
     
     # create new policy
     tx = product.applyForPolicy(
+        email,
+        age, 
+        gender,
+        nominee,
         object_name,
         sum_insured_amount,
+      
         {'from': customer})
 
     return get_process_id(tx)

@@ -220,7 +220,7 @@ class GifProduct(object):
         self.product = productContractClass.deploy(
             s2b(name),
             erc20Token.address,
-            oracle.getId(),
+            # oracle.getId(),
             riskpool.getId(),
             registry,
             {'from': productOwner},

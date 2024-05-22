@@ -1,0 +1,78 @@
+brownie compile --all
+brownie console
+
+1.
+
+from scripts.instance import GifInstance
+
+instance = GifInstance(accounts[0], accounts[1])
+
+instance.getRegistry().address
+
+add following to gif_instance_address.txt
+registry=0x602C71e4DAC47a042Ee7f46E0aee17F94A3bA0B6
+
+2.
+
+from scripts.deploy_nebula import all_in_1, verify_deploy, create_bundle, create_policy, help
+
+(customer, customer2, product, oracle, riskpool, riskpoolWallet, investor, usdc, instance, instanceService, instanceOperator, bundleId, processId, d) = all_in_1(deploy_all=False)
+
+3.
+
+create 2 accounts:
+accounts.add()
+accounts.add()
+
+holder = accounts[-2]
+nominee = accounts[-1]
+
+Transfer test eth to holder and nominee:
+accounts[11].transfer(holder, "10 ether")
+accounts[11].transfer(nominee, "2 ether")
+
+4. 
+
+transfer 1000 usdc token to holder and approve
+
+usdc.transfer(holder, 1000 * 10 ** 6, {'from': instanceOperator})
+usdc.approve(instanceService.getTreasuryAddress(), 1000 * 10 ** 6, {'from': holder })
+
+5. 
+
+add holder and nominee to metamask local network
+holder.private_key
+nominee.private_key
+
+6. 
+
+import usdc token to metamask
+usdc on console ives cotnract address
+
+7. 
+
+apply for policy of sum insured 10 USDC
+
+policy = product.applyForPolicy("dpk@abc.com", 25, 1, nominee.address, "LIFE", 10 * 10 ** 6, { "from": holder })
+
+processId = policy.events['LogApplicationCreated'][0]['processId']
+
+instanceService.getApplication(processId).dict()
+
+instanceService.getPolicy(processId).dict()
+
+8. 
+
+generate claim
+
+product.handleClaim(processId, {"from": holder })
+
+
+9. 
+
+copy product contract address and product abi to dapp
+
+
+
+
+

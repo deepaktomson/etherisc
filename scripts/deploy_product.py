@@ -397,7 +397,7 @@ def all_in_1_base(
     else:
         if token_address or get_address('token'):
             token = contract_from_address(
-                interface.IERC20Metadata, 
+                IERC20Metadata, 
                 token_address or get_address('token'))
         else:
             token = tokenContractClass.deploy({'from':a[INSTANCE_OPERATOR]}, publish_source=publish_source)
@@ -475,7 +475,13 @@ def all_in_1_base(
         instance, 
         instanceOperator,
         product,
-        customer)
+        customer,
+        "test@test.com",
+        20,
+        1,
+        "0x46C0a5326E643E4f71D3149d50B48216e174Ae84"
+        
+        )
 
     return (
         deployment[CUSTOMER1],
