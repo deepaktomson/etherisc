@@ -8,9 +8,7 @@ import "@etherisc/gif-interface/contracts/components/Product.sol";
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract TestProduct is 
-    Product 
-{
+contract TestProduct is Product {
     bytes32 public constant POLICY_FLOW = "PolicyDefaultFlow";
     string public constant ORACLE_CALLBACK_METHOD_NAME = "oracleCallback";
 
@@ -18,15 +16,19 @@ contract TestProduct is
     uint256 private _testOracleId;
     uint256 private _testRiskpoolId;
 
-    bytes32 [] private _applications;
-    bytes32 [] private _policies;
+    bytes32[] private _applications;
+    bytes32[] private _policies;
     uint256 private _claims;
 
     mapping(bytes32 => uint256) private _policyIdToClaimId;
     mapping(bytes32 => uint256) private _policyIdToPayoutId;
 
     event LogTestProductFundingReceived(address sender, uint256 amount);
-    event LogTestOracleCallbackReceived(uint256 requestId, bytes32 policyId, bytes response);
+    event LogTestOracleCallbackReceived(
+        uint256 requestId,
+        bytes32 policyId,
+        bytes response
+    );
 
     constructor(
         bytes32 productName,
@@ -36,7 +38,13 @@ contract TestProduct is
         uint256 riskpoolId,
         address registryAddress
     )
-        Product(productName, tokenAddress, POLICY_FLOW, riskpoolId, registryAddress)
+        Product(
+            productName,
+            tokenAddress,
+            POLICY_FLOW,
+            riskpoolId,
+            registryAddress
+        )
     {
         require(tokenAddress != address(0), "ERROR:TI-2:TOKEN_ADDRESS_ZERO");
         _capitalOwner = capitalOwner;
@@ -45,23 +53,21 @@ contract TestProduct is
     }
 
     function applyForPolicy(
-        uint256 premium, 
+        uint256 premium,
         uint256 sumInsured,
         bytes calldata metaData,
         bytes calldata applicationData
-    ) 
-        external 
-        payable 
-        returns (bytes32 processId) 
-    {
+    ) external payable returns (bytes32 processId) {
         address payable policyHolder = payable(_msgSender());
 
         processId = _newApplication(
             policyHolder,
-            premium, 
+            policyHolder,
+            premium,
             sumInsured,
             metaData,
-            applicationData);
+            applicationData
+        );
 
         _applications.push(processId);
 
@@ -73,21 +79,20 @@ contract TestProduct is
 
     function applyForPolicy(
         address payable policyHolder,
-        uint256 premium, 
+        address nominee,
+        uint256 premium,
         uint256 sumInsured,
         bytes calldata metaData,
         bytes calldata applicationData
-    ) 
-        external 
-        payable 
-        returns (bytes32 processId) 
-    {
+    ) external payable returns (bytes32 processId) {
         processId = _newApplication(
             policyHolder,
-            premium, 
+            nominee,
+            premium,
             sumInsured,
             metaData,
-            applicationData);
+            applicationData
+        );
 
         _applications.push(processId);
 
@@ -97,55 +102,58 @@ contract TestProduct is
         }
     }
 
-
     function newAppliation(
-        uint256 premium, 
+        uint256 premium,
         uint256 sumInsured,
         bytes calldata metaData,
         bytes calldata applicationData
-    ) 
-        external 
-        payable 
-        returns (bytes32 processId) 
-    {
+    ) external payable returns (bytes32 processId) {
         address payable policyHolder = payable(_msgSender());
 
         processId = _newApplication(
             policyHolder,
-            premium, 
+            policyHolder,
+            premium,
             sumInsured,
             metaData,
-            applicationData);
+            applicationData
+        );
 
         _applications.push(processId);
     }
 
-
-    function revoke(bytes32 processId) external onlyPolicyHolder(processId) { 
+    function revoke(bytes32 processId) external onlyPolicyHolder(processId) {
         _revoke(processId);
     }
 
-    function decline(bytes32 processId) external onlyOwner { 
+    function decline(bytes32 processId) external onlyOwner {
         _decline(processId);
     }
 
-    function underwrite(bytes32 processId) external onlyOwner { 
+    function underwrite(bytes32 processId) external onlyOwner {
         bool success = _underwrite(processId);
         if (success) {
             _policies.push(processId);
         }
     }
 
-    function collectPremium(bytes32 policyId) 
-        external onlyOwner
-        returns(bool success, uint256 fee, uint256 netPremium)
+    function collectPremium(
+        bytes32 policyId
+    )
+        external
+        onlyOwner
+        returns (bool success, uint256 fee, uint256 netPremium)
     {
         (success, fee, netPremium) = _collectPremium(policyId);
     }
 
-    function collectPremium(bytes32 policyId, uint256 amount) 
-        external onlyOwner
-        returns(bool success, uint256 fee, uint256 netPremium)
+    function collectPremium(
+        bytes32 policyId,
+        uint256 amount
+    )
+        external
+        onlyOwner
+        returns (bool success, uint256 fee, uint256 netPremium)
     {
         (success, fee, netPremium) = _collectPremium(policyId, amount);
     }
@@ -158,17 +166,15 @@ contract TestProduct is
         _close(policyId);
     }
 
-    function submitClaim(bytes32 policyId, uint256 claimAmount) 
-        external
-        onlyPolicyHolder(policyId)
-        returns(uint256 claimId)
-    {
-
+    function submitClaim(
+        bytes32 policyId,
+        uint256 claimAmount
+    ) external onlyPolicyHolder(policyId) returns (uint256 claimId) {
         // increase claims counter
-        // the oracle business logic will use this counter value 
+        // the oracle business logic will use this counter value
         // to determine if the claim is linked to a loss event or not
         _claims++;
-        
+
         // claim application
         claimId = _newClaim(policyId, claimAmount, "");
         _policyIdToClaimId[policyId] = claimId;
@@ -184,33 +190,33 @@ contract TestProduct is
         );
     }
 
-    function submitClaimNoOracle(bytes32 policyId, uint256 claimAmount) 
-        external
-        onlyPolicyHolder(policyId)
-        returns(uint256 claimId)
-    {
-
+    function submitClaimNoOracle(
+        bytes32 policyId,
+        uint256 claimAmount
+    ) external onlyPolicyHolder(policyId) returns (uint256 claimId) {
         // increase claims counter
-        // the oracle business logic will use this counter value 
+        // the oracle business logic will use this counter value
         // to determine if the claim is linked to a loss event or not
         _claims++;
-        
+
         // claim application
         claimId = _newClaim(policyId, claimAmount, "");
         _policyIdToClaimId[policyId] = claimId;
     }
-    
-    function submitClaimWithDeferredResponse(bytes32 policyId, uint256 claimAmount) 
+
+    function submitClaimWithDeferredResponse(
+        bytes32 policyId,
+        uint256 claimAmount
+    )
         external
         onlyPolicyHolder(policyId)
-        returns(uint256 claimId, uint256 requestId)
+        returns (uint256 claimId, uint256 requestId)
     {
-
         // increase claims counter
-        // the oracle business logic will use this counter value 
+        // the oracle business logic will use this counter value
         // to determine if the claim is linked to a loss event or not
         _claims++;
-        
+
         // claim application
         claimId = _newClaim(policyId, claimAmount, "");
         _policyIdToClaimId[policyId] = claimId;
@@ -227,92 +233,58 @@ contract TestProduct is
     }
 
     function confirmClaim(
-        bytes32 policyId, 
-        uint256 claimId, 
+        bytes32 policyId,
+        uint256 claimId,
         uint256 confirmedAmount
-    ) 
-        external
-        onlyOwner
-    {
+    ) external onlyOwner {
         _confirmClaim(policyId, claimId, confirmedAmount);
     }
 
     function declineClaim(
-        bytes32 policyId, 
+        bytes32 policyId,
         uint256 claimId
-    ) 
-        external
-        onlyOwner
-    {
+    ) external onlyOwner {
         _declineClaim(policyId, claimId);
     }
 
-    function closeClaim(
-        bytes32 policyId, 
-        uint256 claimId
-    ) 
-        external
-        onlyOwner
-    {
+    function closeClaim(bytes32 policyId, uint256 claimId) external onlyOwner {
         _closeClaim(policyId, claimId);
     }
 
     function createPayout(
-        bytes32 policyId, 
-        uint256 claimId, 
+        bytes32 policyId,
+        uint256 claimId,
         uint256 payoutAmount
-    ) 
-        external
-        onlyOwner
-        returns(uint256 payoutId)
-    {
-        payoutId = _newPayout(
-            policyId, 
-            claimId, 
-            payoutAmount, 
-            abi.encode(0));
-            
-        _processPayout(policyId, payoutId);
+    ) external onlyOwner returns (uint256 payoutId) {
+        payoutId = _newPayout(policyId, claimId, payoutAmount, abi.encode(0));
+
+        // _processPayout(policyId, payoutId);
     }
 
     function newPayout(
-        bytes32 policyId, 
-        uint256 claimId, 
+        bytes32 policyId,
+        uint256 claimId,
         uint256 payoutAmount
-    ) 
-        external
-        onlyOwner
-        returns(uint256 payoutId)
-    {
-        payoutId = _newPayout(
-            policyId, 
-            claimId, 
-            payoutAmount, 
-            abi.encode(0));
+    ) external onlyOwner returns (uint256 payoutId) {
+        payoutId = _newPayout(policyId, claimId, payoutAmount, abi.encode(0));
     }
 
     function processPayout(
-        bytes32 policyId, 
+        bytes32 policyId,
         uint256 payoutId
-    ) 
-        external
-        onlyOwner
-    {
-        _processPayout(policyId, payoutId);
+    ) external onlyOwner {
+        // _processPayout(policyId, payoutId);
     }
 
     function oracleCallback(
-        uint256 requestId, 
-        bytes32 policyId, 
+        uint256 requestId,
+        bytes32 policyId,
         bytes calldata responseData
-    )
-        external
-        onlyOracle
-    {
+    ) external onlyOracle {
         emit LogTestOracleCallbackReceived(requestId, policyId, responseData);
 
         // get oracle response data
-        (bool isLossEvent) = abi.decode(responseData, (bool));
+        bool isLossEvent = abi.decode(responseData, (bool));
         uint256 claimId = _policyIdToClaimId[policyId];
 
         // claim handling if there is a loss
@@ -320,8 +292,7 @@ contract TestProduct is
             // get policy and claims info for oracle response
             _getApplication(policyId);
 
-            IPolicy.Claim memory claim 
-                = _getClaim(policyId, claimId);
+            IPolicy.Claim memory claim = _getClaim(policyId, claimId);
 
             // specify payout data
             uint256 confirmedAmount = claim.claimAmount;
@@ -330,10 +301,15 @@ contract TestProduct is
             // create payout record
             uint256 payoutAmount = confirmedAmount;
             bytes memory payoutData = abi.encode(0);
-            uint256 payoutId = _newPayout(policyId, claimId, payoutAmount, payoutData);
+            uint256 payoutId = _newPayout(
+                policyId,
+                claimId,
+                payoutAmount,
+                payoutData
+            );
             _policyIdToPayoutId[policyId] = payoutId;
 
-            _processPayout(policyId, payoutId);
+            // _processPayout(policyId, payoutId);
 
             // TODO refactor to payout using erc-20 token
             // actual transfer of funds for payout of claim
@@ -344,9 +320,19 @@ contract TestProduct is
         }
     }
 
-    function getClaimId(bytes32 policyId) external view returns (uint256) { return _policyIdToClaimId[policyId]; }
-    function getPayoutId(bytes32 policyId) external view returns (uint256) { return _policyIdToPayoutId[policyId]; }
-    function applications() external view returns (uint256) { return _applications.length; }
-    function policies() external view returns (uint256) { return _policies.length; }
-    function claims() external view returns (uint256) { return _claims; }
+    function getClaimId(bytes32 policyId) external view returns (uint256) {
+        return _policyIdToClaimId[policyId];
+    }
+    function getPayoutId(bytes32 policyId) external view returns (uint256) {
+        return _policyIdToPayoutId[policyId];
+    }
+    function applications() external view returns (uint256) {
+        return _applications.length;
+    }
+    function policies() external view returns (uint256) {
+        return _policies.length;
+    }
+    function claims() external view returns (uint256) {
+        return _claims;
+    }
 }

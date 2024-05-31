@@ -5,12 +5,7 @@ import "@etherisc/gif-interface/contracts/components/Product.sol";
 
 import "./FireOracle.sol";
 
-   
-
-
 contract FireProduct is Product {
-   
-
     // constants
     bytes32 public constant VERSION = "0.0.1";
     bytes32 public constant POLICY_FLOW = "PolicyDefaultFlow";
@@ -24,9 +19,6 @@ contract FireProduct is Product {
 
     string public constant CALLBACK_METHOD_NAME = "oracleCallback";
 
- 
-   
-
     // variables
     // TODO should be framework feature
     bytes32[] private _applications; // useful for debugging, might need to get rid of this
@@ -39,7 +31,7 @@ contract FireProduct is Product {
         bytes32 processId,
         address policyHolder,
         uint256 sumInsured,
-       address nominee
+        address nominee
     );
     event LogFirePolicyExpired(string objectName, bytes32 processId);
     event LogFireOracleCallbackReceived(
@@ -100,17 +92,23 @@ contract FireProduct is Product {
     }
 
     function _checkEligibilty(
-        string memory email, 
-        uint256 age, 
-        uint256 gender, 
-        uint256 objectValue) external 
-    returns(string memory e, uint256 a, uint256 g, uint256 oV, uint8 status) {
-  
-
+        string memory email,
+        uint256 age,
+        uint256 gender,
+        uint256 objectValue
+    )
+        external
+        returns (
+            string memory e,
+            uint256 a,
+            uint256 g,
+            uint256 oV,
+            uint8 status
+        )
+    {
         if (objectValue <= 0 || objectValue >= 10 ** 9) {
             return (email, age, gender, objectValue, 0);
-        } 
-
+        }
 
         if (activePolicy[email]) {
             return (email, age, gender, objectValue, 0);
@@ -141,23 +139,22 @@ contract FireProduct is Product {
         require(age >= 18 && age <= 60, "ERROR:FI-012:OUTSIDE_AGE_LIMITS");
         require(objectValue < 10 ** 19, "ERROR:FI-013:OBJECT_VALUE_TOO_LARGE");
 
-        
-
         // Create and underwrite new application
         address policyHolder = msg.sender;
         uint256 premiumAmount = calculatePremium(objectValue);
         //  require(msg.value >= premiumAmount, "ERROR:FI-014:NO_PREMIUM");
-        require(policyHolder.balance > premiumAmount, "ERROR:FI-015:INSUFFICIENT_BALANCE");
+        require(
+            policyHolder.balance > premiumAmount,
+            "ERROR:FI-015:INSUFFICIENT_BALANCE"
+        );
 
-       
         uint256 sumInsuredAmount = objectValue;
         bytes memory metaData = abi.encodePacked(email, age, gender, nominee);
 
-        bytes memory applicationData = encodeApplicationParametersToData(
-            email
-        );
+        bytes memory applicationData = encodeApplicationParametersToData(email);
 
         processId = _newApplication(
+            policyHolder,
             policyHolder,
             premiumAmount,
             sumInsuredAmount,
@@ -195,7 +192,6 @@ contract FireProduct is Product {
     ) public pure returns (uint256 premiumAmount) {
         return objectValue / OBJECT_VALUE_DIVISOR;
     }
-
 
     function expirePolicy(bytes32 processId) external onlyOwner {
         // Get policy data
@@ -270,7 +266,7 @@ struct Application {
 
             uint256 payoutId = _newPayout(policyId, claimId, payoutAmount, "");
             emit LogFireClaimConfirmed(policyId, claimId, payoutAmount);
-            _processPayout(policyId, payoutId);
+            // _processPayout(policyId, payoutId);
 
             emit LogFirePayoutExecuted(
                 policyId,
@@ -289,7 +285,7 @@ struct Application {
         bytes1 fireCategory
     ) internal pure returns (uint256 payoutAmount) {
         if (fireCategory == "M") {
-            payoutAmount = (PAYOUT_FACTOR_MEDIUM * sumInsured)  / 100;
+            payoutAmount = (PAYOUT_FACTOR_MEDIUM * sumInsured) / 100;
         } else if (fireCategory == "L") {
             payoutAmount = (PAYOUT_FACTOR_LARGE * sumInsured) / 100;
         } else {

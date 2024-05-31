@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 import "@etherisc/gif-interface/contracts/components/Product.sol";
 
 import "../token/Usdc.sol";
-
+import "./NebulaArbitrator.sol";
 
 contract NebulaProduct is Product {
     // constants
@@ -18,9 +18,9 @@ contract NebulaProduct is Product {
     uint256 public constant PAYOUT_FACTOR_MEDIUM = 20;
     uint256 public constant PAYOUT_FACTOR_LARGE = 100;
 
+    bytes32[] private _applications;
 
-
-    bytes32[] private _applications; 
+    NebulaArbitrator public arbitrator;
 
     struct Application {
         address policyHolder;
@@ -30,12 +30,16 @@ contract NebulaProduct is Product {
     }
 
     Application[] public listOfApplications;
-  
 
     mapping(string => bool) public activePolicy;
 
     // events
-    event LogNebulaApplicationSubmitted(address policyHolder, address nominee, uint256 sumInsuredAmount, uint256 premiumAmount);
+    event LogNebulaApplicationSubmitted(
+        address policyHolder,
+        address nominee,
+        uint256 sumInsuredAmount,
+        uint256 premiumAmount
+    );
     event LogNebulaApplicationAccepted(
         bytes32 processId,
         address policyHolder,
@@ -47,17 +51,18 @@ contract NebulaProduct is Product {
         bytes32 processId,
         address policyHolder,
         uint256 premium
-
     );
 
-event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint256 netAmount);
+    event LogNebulaPremiumPaymentSuccess(
+        bytes32 processId,
+        uint256 feeAmount,
+        uint256 netAmount
+    );
     event LogNebulaPremiumPaymentFailed(
         bytes32 processId,
         address policyHolder,
         uint256 premium
-
     );
-
 
     event LogNebulaPolicyCreated(
         bytes32 processId,
@@ -65,11 +70,10 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         address nominee,
         uint256 sumInsuredAmount,
         uint256 premium
-      
     );
     // event LogNebulaPolicyExpired(string objectName, bytes32 processId);
 
-  event LogNebulaNomineeFound(string nominee);
+    event LogNebulaNomineeFound(string nominee);
     event LogNebulaClaimConfirmed(
         bytes32 processId,
         uint256 claimId,
@@ -93,8 +97,6 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
 
     event LogNebulaPolicyExpired(bytes32 processid);
 
-
-    
     // event  LogNebulaClaimConfirmed(
     //             uint256 policyId,
     //             uint256 claimId,
@@ -107,8 +109,10 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         uint256 riskpoolId,
         address registry
     ) Product(productName, token, POLICY_FLOW, riskpoolId, registry) {
-    
+        arbitrator = new NebulaArbitrator();
     }
+
+    receive() external payable {}
 
     function applicationsCount()
         external
@@ -118,20 +122,28 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         return _applications.length;
     }
 
-    function viewApplication(uint256 applicationId)
+    function viewApplication(
+        uint256 applicationId
+    )
         external
         view
         returns (
-             address policyHolder,
-              address nominee,
+            address policyHolder,
+            address nominee,
             uint256 sumInsuredAmount,
             uint256 premium
-       
-       )
+        )
     {
-        require(applicationId >= 0 && applicationId < _applications.length, "ERROR:NEBULA-001:APPLICATION_ID_INCORRECT");
-        return (listOfApplications[applicationId].policyHolder, listOfApplications[applicationId].nominee, 
-        listOfApplications[applicationId].sumInsuredAmount, listOfApplications[applicationId].premium);
+        require(
+            applicationId >= 0 && applicationId < _applications.length,
+            "ERROR:NEBULA-001:APPLICATION_ID_INCORRECT"
+        );
+        return (
+            listOfApplications[applicationId].policyHolder,
+            listOfApplications[applicationId].nominee,
+            listOfApplications[applicationId].sumInsuredAmount,
+            listOfApplications[applicationId].premium
+        );
     }
 
     function getApplicationId(
@@ -158,17 +170,23 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
     }
 
     function checkEligibilty(
-        string memory email, 
-        uint256 age, 
-        uint256 gender, 
-        uint256 sumInsuredAmount) external 
-    returns(string memory e, uint256 a, uint256 g, uint256 oV, uint8 status) {
-  
-
+        string memory email,
+        uint256 age,
+        uint256 gender,
+        uint256 sumInsuredAmount
+    )
+        external
+        returns (
+            string memory e,
+            uint256 a,
+            uint256 g,
+            uint256 oV,
+            uint8 status
+        )
+    {
         if (sumInsuredAmount <= 0 || sumInsuredAmount >= 10 ** 9) {
             return (email, age, gender, sumInsuredAmount, 0);
-        } 
-
+        }
 
         if (activePolicy[email]) {
             return (email, age, gender, sumInsuredAmount, 0);
@@ -186,7 +204,10 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
     }
 
     function approveTokenTransfer(uint256 amount) external {
-        Usdc(this.getToken()).approve(_instanceService.getTreasuryAddress(), amount);
+        Usdc(this.getToken()).approve(
+            _instanceService.getTreasuryAddress(),
+            amount
+        );
     }
 
     function applyForPolicy(
@@ -201,9 +222,10 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         require(sumInsuredAmount > 0, "ERROR:NEBULA-003:OBJECT_VALUE_ZERO");
         require(!activePolicy[email], "ERROR:NEBULA-004:ACTIVE_POLICY_EXISTS");
         require(age >= 18 && age <= 60, "ERROR:NEBULA-005:OUTSIDE_AGE_LIMITS");
-        require(sumInsuredAmount < 10 ** 19, "ERROR:NEBULA-006:OBJECT_VALUE_TOO_LARGE");
-
-        
+        require(
+            sumInsuredAmount < 10 ** 19,
+            "ERROR:NEBULA-006:OBJECT_VALUE_TOO_LARGE"
+        );
 
         // Create and underwrite new application
         // address policyHolder = msg.sender;
@@ -220,34 +242,48 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         bytes memory metaData = abi.encode(nominee);
 
         bytes memory applicationData = encodeApplicationParametersToData(email);
-       
+
         processId = _newApplication(
             msg.sender,
+            nominee,
             premiumAmount,
             sumInsuredAmount,
             metaData,
             applicationData
         );
 
-        require(Usdc(this.getToken()).allowance(msg.sender, _instanceService.getTreasuryAddress()) >= premiumAmount, "ERROR:NEBULA-PREMIUM-007:PREMIUM_AMOUNT_INCORRECT");
+        require(
+            Usdc(this.getToken()).allowance(
+                msg.sender,
+                _instanceService.getTreasuryAddress()
+            ) >= premiumAmount,
+            "ERROR:NEBULA-PREMIUM-007:PREMIUM_AMOUNT_INCORRECT"
+        );
 
         bool success = _underwrite(processId);
         _applications.push(processId);
         // Application memory application = Application(policyHolder, nominee, sumInsuredAmount, premiumAmount);
-        listOfApplications.push(Application(msg.sender, nominee, sumInsuredAmount, premiumAmount));
+        listOfApplications.push(
+            Application(msg.sender, nominee, sumInsuredAmount, premiumAmount)
+        );
 
         if (success) {
-               activePolicy[email] = true;
+            activePolicy[email] = true;
             //    (bool success, ,) = collectPremium(processId, premiumAmount);
 
-  
-         LogNebulaPolicyCreated(processId, msg.sender, nominee, sumInsuredAmount, premiumAmount);
+            LogNebulaPolicyCreated(
+                processId,
+                msg.sender,
+                nominee,
+                sumInsuredAmount,
+                premiumAmount
+            );
         } else {
             LogNebulaApplicationRejected(processId, msg.sender, premiumAmount);
         }
-     
+
         //  return processId;
-    
+
         // if (msg.value == premiumAmount) {
         //     (bool success, ,) = collectPremium(processId, premiumAmount);
 
@@ -266,39 +302,36 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         //     return (processId, false);
         // }
         // return (processId, false);
-
     }
 
-    function acceptApplication(bytes32 processId) external returns (bool _policyId) {
+    function acceptApplication(
+        bytes32 processId
+    ) external returns (bool _policyId) {
         //  _policyId = _underwrite(processId);
-         return _underwrite(processId);
+        return _underwrite(processId);
     }
 
-    function declineApplication(bytes32 processId) external returns (bool status) {
-         _decline(processId);
-         return true;
+    function declineApplication(
+        bytes32 processId
+    ) external returns (bool status) {
+        _decline(processId);
+        return true;
     }
 
-    function collectPremium(bytes32 processId, uint256 amount)
-        public
-        returns(
-            bool success,
-            uint256 feeAmount,
-            uint256 netAmount
-        )
-    {
+    function collectPremium(
+        bytes32 processId,
+        uint256 amount
+    ) public returns (bool success, uint256 feeAmount, uint256 netAmount) {
         (success, feeAmount, netAmount) = _collectPremium(processId);
-          LogNebulaPremiumPaymentSuccess(processId, feeAmount, netAmount);
+        LogNebulaPremiumPaymentSuccess(processId, feeAmount, netAmount);
         return (success, feeAmount, netAmount);
     }
-
 
     function calculatePremium(
         uint256 sumInsuredAmount
     ) public pure returns (uint256 premiumAmount) {
-        return  (10 * sumInsuredAmount) / 100;
+        return (10 * sumInsuredAmount) / 100;
     }
-
 
     function expirePolicy(bytes32 processId) external onlyOwner {
         // Get policy data
@@ -308,7 +341,7 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
         );
 
         // Validate input parameter
-        require(activePolicy[objectName], "ERROR:FI-005:EXPIRED_POLICY");
+        require(activePolicy[objectName], "ERROR:NEBULA-005:EXPIRED_POLICY");
 
         _expire(processId);
         activePolicy[objectName] = false;
@@ -319,7 +352,6 @@ event LogNebulaPremiumPaymentSuccess(bytes32 processId, uint256 feeAmount, uint2
     //  function raiseClaim(
     //     bytes32 policyId
     // ) external  {
- 
 
     //     IPolicy.Application memory applicationData = _getApplication(policyId);
     //     uint256 sumInsured = applicationData.sumInsuredAmount;
@@ -372,7 +404,7 @@ struct Application {
         address payable policyHolder = payable(_getMetadata(policyId).owner);
 
         // Validate input parameter
-        require(activePolicy[objectName], "ERROR:FI-006:EXPIRED_POLICY");
+        require(activePolicy[objectName], "ERROR:NEBULA-006:EXPIRED_POLICY");
 
         // Get oracle response data
         bytes1 fireCategory = abi.decode(response, (bytes1));
@@ -385,24 +417,31 @@ struct Application {
     //     return _oracleId;
     // }
 
-    function handleClaim(
-        bytes32 policyId
-    ) external {
+    function handleClaim(bytes32 policyId) external {
         IPolicy.Application memory applicationData = _getApplication(policyId);
         uint256 sumInsured = applicationData.sumInsuredAmount;
         uint256 payoutAmount = _calculatePayoutAmount(sumInsured);
+        IPolicy.Metadata memory metadata = _getMetadata(policyId);
+        require(metadata.nominee == msg.sender, "ERROR:NEBULA-007:NOT_NOMINEE");
 
         // no claims handling for payouts == 0
         if (payoutAmount > 0) {
+            // create escrow account
+
             bytes memory responseData = abi.encodePacked("");
             uint256 claimId = _newClaim(policyId, payoutAmount, responseData);
             _confirmClaim(policyId, claimId, payoutAmount);
 
             emit LogNebulaClaimConfirmed(policyId, claimId, payoutAmount);
 
-            uint256 payoutId = _newPayout(policyId, claimId, payoutAmount, responseData);
-         
-            _processPayout(policyId, payoutId);
+            uint256 payoutId = _newPayout(
+                policyId,
+                claimId,
+                payoutAmount,
+                responseData
+            );
+
+            _processPayout(policyId, payoutId, arbitrator);
 
             emit LogNebulaPayoutExecuted(
                 policyId,

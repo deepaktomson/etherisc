@@ -9,7 +9,7 @@
     "@chainlink/=/home/vscode/.brownie/packages/smartcontractkit/chainlink@2.10.0",
     "@etherisc/gif-interface/=/home/vscode/.brownie/packages/etherisc/gif-interface@3b0002a"
   ],
-  "solidity.compileUsingRemoteVersion": "v0.8.9+commit.e5eed63a",
+  "solidity.compileUsingRemoteVersion": "v0.8.2+commit.661d1103",
   "peacock.remoteColor": "1D3C43",
   "workbench.colorCustomizations": {
     "activityBar.activeBackground": "#2c5c67",

@@ -24,19 +24,17 @@ for this the compromised product claims
 - to be a product
 - to be in state active (independent of an approval step by the instance operator)
 */
-contract TestCompromisedProduct is 
-    IProduct,
-    Ownable 
-{
-    IComponent.ComponentState public constant FAKE_STATE = IComponent.ComponentState.Active;
-    
+contract TestCompromisedProduct is IProduct, Ownable {
+    IComponent.ComponentState public constant FAKE_STATE =
+        IComponent.ComponentState.Active;
+
     bytes32 public constant POLICY_FLOW = "PolicyDefaultFlow";
 
     bytes32 private _componentName;
     address private _tokenAddress;
     uint256 private _componentId;
     uint256 private _riskpoolId;
-    
+
     IRegistry private _registry;
     IAccess private _access;
     IComponentOwnerService private _componentOwnerService;
@@ -50,7 +48,7 @@ contract TestCompromisedProduct is
     modifier onlyPolicyHolder(bytes32 policyId) {
         address policyHolder = _instanceService.getMetadata(policyId).owner;
         require(
-            _msgSender() == policyHolder, 
+            _msgSender() == policyHolder,
             "ERROR:TCP-1:INVALID_POLICY_OR_HOLDER"
         );
         _;
@@ -62,9 +60,7 @@ contract TestCompromisedProduct is
         uint256 fakeComponentId,
         uint256 fakeRiskpoolId,
         address registryAddress
-    )
-        Ownable()
-    { 
+    ) Ownable() {
         _componentName = fakeProductName;
         _tokenAddress = tokenAddress;
         _componentId = fakeComponentId;
@@ -79,80 +75,140 @@ contract TestCompromisedProduct is
     }
 
     function applyForPolicy(
-        uint256 premium, 
+        uint256 premium,
         uint256 sumInsured,
         bytes calldata metaData,
         bytes calldata applicationData
-    ) 
-        external 
-        payable 
-        returns (bytes32 processId) 
-    {
+    ) external payable returns (bytes32 processId) {
         address payable policyHolder = payable(_msgSender());
 
         // Create and underwrite new application
         processId = _productService.newApplication(
-            policyHolder, 
-            premium, 
-            sumInsured, 
-            metaData, 
-            applicationData);
+            policyHolder,
+            policyHolder,
+            premium,
+            sumInsured,
+            metaData,
+            applicationData
+        );
 
         _productService.underwrite(processId);
     }
 
-    function collectPremium(bytes32 policyId) 
-        external 
-    {
+    function collectPremium(bytes32 policyId) external {
         IPolicy.Policy memory policy = _instanceService.getPolicy(policyId);
         _productService.collectPremium(policyId, policy.premiumExpectedAmount);
     }
 
-    function submitClaim(bytes32 policyId, uint256 claimAmount) 
-        external
-        onlyPolicyHolder(policyId)
-    {
+    function submitClaim(
+        bytes32 policyId,
+        uint256 claimAmount
+    ) external onlyPolicyHolder(policyId) {
         // increase claims counter
         _claims += 1;
-        
+
         // create claim and confirm it
-        uint256 claimId = _productService.newClaim(policyId, claimAmount, abi.encode(0));
+        uint256 claimId = _productService.newClaim(
+            policyId,
+            claimAmount,
+            abi.encode(0)
+        );
         _productService.confirmClaim(policyId, claimId, claimAmount);
 
         // create payout record
-        uint256 payoutId = _productService.newPayout(policyId, claimId, claimAmount, abi.encode(0));
-        _productService.processPayout(policyId, payoutId);
+        uint256 payoutId = _productService.newPayout(
+            policyId,
+            claimId,
+            claimAmount,
+            abi.encode(0)
+        );
+        // _productService.processPayout(policyId, payoutId);
     }
 
     //--- product service access --------------------------------------------//
 
     //--- iproduct ----------------------------------------------------------//
-    function getToken() external override view returns(address token) { return _tokenAddress; }
-    function getPolicyFlow() external override view returns(address policyFlow) { return _getContractAddress(POLICY_FLOW); }
-    function getRiskpoolId() external override view returns(uint256 riskpoolId) { return _riskpoolId; }
+    function getToken() external view override returns (address token) {
+        return _tokenAddress;
+    }
+    function getPolicyFlow()
+        external
+        view
+        override
+        returns (address policyFlow)
+    {
+        return _getContractAddress(POLICY_FLOW);
+    }
+    function getRiskpoolId()
+        external
+        view
+        override
+        returns (uint256 riskpoolId)
+    {
+        return _riskpoolId;
+    }
 
-    function getApplicationDataStructure() external override view returns(string memory dataStructure) { return ""; }
-    function getClaimDataStructure() external override view returns(string memory dataStructure) { return ""; }
-    function getPayoutDataStructure() external override view returns(string memory dataStructure) { return ""; }
+    function getApplicationDataStructure()
+        external
+        view
+        override
+        returns (string memory dataStructure)
+    {
+        return "";
+    }
+    function getClaimDataStructure()
+        external
+        view
+        override
+        returns (string memory dataStructure)
+    {
+        return "";
+    }
+    function getPayoutDataStructure()
+        external
+        view
+        override
+        returns (string memory dataStructure)
+    {
+        return "";
+    }
 
     function riskPoolCapacityCallback(uint256 capacity) external override {}
 
     //--- icomponent --------------------------------------------------------//
     function setId(uint256 id) external override {} // does not care about id
 
-    function getName() external override view returns(bytes32) { return _componentName; }
-    function getId() external override view returns(uint256) { return _componentId; }
-    function getType() external override view returns(ComponentType) { return IComponent.ComponentType.Product; }
-    function getState() external override view returns(ComponentState) { return IComponent.ComponentState.Active; }
-    function getOwner() external override view returns(address) { return owner(); }
-    function getRegistry() external override view returns(IRegistry) { return _registry; }
+    function getName() external view override returns (bytes32) {
+        return _componentName;
+    }
+    function getId() external view override returns (uint256) {
+        return _componentId;
+    }
+    function getType() external view override returns (ComponentType) {
+        return IComponent.ComponentType.Product;
+    }
+    function getState() external view override returns (ComponentState) {
+        return IComponent.ComponentState.Active;
+    }
+    function getOwner() external view override returns (address) {
+        return owner();
+    }
+    function getRegistry() external view override returns (IRegistry) {
+        return _registry;
+    }
 
-    function isProduct() public override view returns(bool) { return true; }
-    function isOracle() public override view returns(bool) { return false; }
-    function isRiskpool() public override view returns(bool) { return false; }
+    function isProduct() public view override returns (bool) {
+        return true;
+    }
+    function isOracle() public view override returns (bool) {
+        return false;
+    }
+    function isRiskpool() public view override returns (bool) {
+        return false;
+    }
 
     function proposalCallback() external override {}
-    function approvalCallback() external override {} 
+    function approvalCallback() external override {}
     function declineCallback() external override {}
     function suspendCallback() external override {}
     function resumeCallback() external override {}
@@ -161,23 +217,31 @@ contract TestCompromisedProduct is
     function archiveCallback() external override {}
 
     function _getAccess() private view returns (IAccess) {
-        return IAccess(_getContractAddress("Access"));        
+        return IAccess(_getContractAddress("Access"));
     }
 
     function _getInstanceService() private view returns (IInstanceService) {
-        return IInstanceService(_getContractAddress("InstanceService"));        
+        return IInstanceService(_getContractAddress("InstanceService"));
     }
 
-    function _getComponentOwnerService() private view returns (IComponentOwnerService) {
-        return IComponentOwnerService(_getContractAddress("ComponentOwnerService"));        
+    function _getComponentOwnerService()
+        private
+        view
+        returns (IComponentOwnerService)
+    {
+        return
+            IComponentOwnerService(
+                _getContractAddress("ComponentOwnerService")
+            );
     }
 
     function _getProductService() private view returns (IProductService) {
-        return IProductService(_getContractAddress("ProductService"));        
+        return IProductService(_getContractAddress("ProductService"));
     }
 
-    function _getContractAddress(bytes32 contractName) private view returns (address) { 
+    function _getContractAddress(
+        bytes32 contractName
+    ) private view returns (address) {
         return _registry.getContract(contractName);
     }
-
 }
